@@ -1,55 +1,58 @@
-import commonjs from 'rollup-plugin-commonjs'
-import resolve from 'rollup-plugin-node-resolve'
-import babel from 'rollup-plugin-babel'
-import typescript from 'rollup-plugin-typescript2'
-import banner from 'rollup-plugin-banner'
-import genHeader from './lib/header'
+import commonjs from "@rollup/plugin-commonjs";
+import resolve from "@rollup/plugin-node-resolve";
+import babel from "rollup-plugin-babel";
+import typescript from "rollup-plugin-typescript2";
+import { generateHeader } from "vis-dev-utils";
 
 // TypeScript because Babel transpiles modules in isolation, therefore no type reexports.
 // CommonJS because Babel is not 100 % ESM.
 
 const babelConfingBase = {
-  extensions: ['.ts', '.js'],
-  runtimeHelpers: true,
-}
+  extensions: [".ts", ".js"],
+  runtimeHelpers: true
+};
 const resolveConfig = {
-  extensions: [...babelConfingBase.extensions, '.json'],
-}
-const bannerConfig = genHeader('data')
+  browser: true,
+  mainFields: ["module", "main"],
+  extensions: [...babelConfingBase.extensions, ".json"]
+};
+const banner = generateHeader();
 const typescriptConfig = {
-  tsconfig: 'tsconfig.code.json',
-}
+  tsconfig: "tsconfig.code.json"
+};
 
 export default [
   {
-    input: 'src/index.ts',
+    input: "src/index.ts",
     output: {
-      file: 'dist/esm.js',
-      format: 'esm',
+      banner,
+      file: "dist/esm.js",
+      format: "esm",
+      sourcemap: true
     },
     plugins: [
       resolve(resolveConfig),
       typescript(typescriptConfig),
       commonjs(),
-      babel(babelConfingBase),
-      banner(bannerConfig),
-    ],
+      babel(babelConfingBase)
+    ]
   },
   {
-    input: 'src/index.ts',
+    input: "src/index.ts",
     output: {
-      file: 'dist/umd.js',
-      format: 'umd',
-      exports: 'named',
-      name: 'vis',
-      extend: true
+      banner,
+      file: "dist/umd.js",
+      format: "umd",
+      exports: "named",
+      name: "vis",
+      extend: true,
+      sourcemap: true
     },
     plugins: [
       resolve(resolveConfig),
       typescript(typescriptConfig),
       commonjs(),
-      babel(babelConfingBase),
-      banner(bannerConfig),
-    ],
-  },
-]
+      babel(babelConfingBase)
+    ]
+  }
+];

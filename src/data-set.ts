@@ -1,7 +1,8 @@
 /* eslint @typescript-eslint/member-ordering: ["error", { "classes": ["field", "constructor", "method"] }] */
 
-import { uuid4 } from "vis-uuid";
-import { convert, deepExtend } from "vis-util";
+import { v4 as uuid4 } from "uuid";
+import { convert } from "./convert";
+import { deepExtend } from "vis-util/esnext";
 
 import {
   DataInterface,
@@ -27,6 +28,14 @@ import { Queue, QueueOptions } from "./queue";
 import { DataSetPart } from "./data-set-part";
 import { DataStream } from "./data-stream";
 
+const warnTypeCorectionDeprecation = (): void => {
+  console.warn(
+    "Type coercion has been deprecated. " +
+      "Please, use data pipes instead. " +
+      "See https://visjs.github.io/vis-data/data/datapipe.html#TypeCoercion for more details with working migration example."
+  );
+};
+
 /**
  * Initial DataSet configuration object.
  *
@@ -42,6 +51,8 @@ export interface DataSetInitialOptions<IdProp extends string> {
    *
    * @remarks
    * **Warning**: There is no TypeScript support for this.
+   *
+   * @deprecated
    */
   type?: TypeMap;
   /**
@@ -111,15 +122,6 @@ export interface DataSetOptions {
  *   }
  * });
  * console.log('filtered items', items);
- *
- * // retrieve formatted items
- * var items = data.get({
- *   fields: ['id', 'date'],
- *   type: {
- *     date: 'ISODate'
- *   }
- * });
- * console.log('formatted items', items);
  * ```
  *
  * @typeParam Item - Item type that may or may not have an id.
@@ -176,6 +178,8 @@ export class DataSet<
     // all variants of a Date are internally stored as Date, so we can convert
     // from everything to everything (also from ISODate to Number for example)
     if (this._options.type) {
+      warnTypeCorectionDeprecation();
+
       const fields = Object.keys(this._options.type);
       for (let i = 0, len = fields.length; i < len; i++) {
         const field = fields[i];
@@ -258,6 +262,10 @@ export class DataSet<
 
     if (Array.isArray(data)) {
       // Array
+      const idsToAdd: Id[] = data.map(d => d[this._idProp] as Id);
+      if (idsToAdd.some(id => this._data.has(id))) {
+        throw new Error("A duplicate id was found in the parameter array.");
+      }
       for (let i = 0, len = data.length; i < len; i++) {
         id = this._addItem(data[i]);
         addedIds.push(id);
@@ -1117,6 +1125,8 @@ export class DataSet<
     const fields = Object.keys(raw);
 
     if (types) {
+      warnTypeCorectionDeprecation();
+
       converted = {};
       for (let i = 0, len = fields.length; i < len; i++) {
         const field = fields[i];
